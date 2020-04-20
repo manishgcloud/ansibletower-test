@@ -1,0 +1,10 @@
+---
+- hosts: all
+  gather_facts: false
+  
+  tasks:
+    - name: ansible async poll
+      command: /bin/sleep 50
+
+    - name: Date
+      command: date

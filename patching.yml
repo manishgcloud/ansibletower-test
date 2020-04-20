@@ -1,0 +1,66 @@
+---
+## This scripted prepared by Manish Gupta. All rights reversed. ##
+## Example to Run: ansible-playbook  patching.yml -t all,reboot ##
+## -t:tags: Use tags only for reboot, if required ##
+- hosts: all
+  become: true
+
+  vars:
+    exclude_pkg: "atomic*,openshift*,ansible*"
+
+  pre_tasks:
+    - name: Get the Pre-Output
+      shell: "{{ item }}"
+      loop:
+        - "cat /etc/redhat-release"
+        - "uname -a"
+      changed_when: false
+      register: preoutput  
+    - debug:
+        msg: "{{ preoutput.results | map(attribute='stdout_lines') | join('\n') }}" 
+  
+  tasks:
+    - name: Update the system
+      yum:
+        name: "*"
+        state: latest
+        exclude: "{{ exclude_pkg }}"
+    
+    - name: List installed and updated packages
+      shell: rpm -qa --last | grep "$(date +%a\ %d\ %b\ %Y)" |cut -f 1 -d " "
+      args:
+        warn: false
+      changed_when: false
+      register: yumoutput
+    - debug:
+        msg: "{{ yumoutput.stdout_lines }}"
+    
+    - name: check if reboot is required
+      shell: needs-restarting -r
+      changed_when: false
+      failed_when: false
+      register: reboot_required
+    - debug: 
+        msg: Reboot isn't required
+      when: reboot_required.rc == 0
+    - debug:
+        msg: Reboot is required. {{ ansible_fqdn }} is going to reboot..
+      when: reboot_required.rc != 0
+    
+    - when: reboot_required.rc != 0
+      block:
+        - name: Reboot is required. {{ ansible_fqdn }} is going to reboot..
+          shell: sleep 3; reboot
+          ignore_errors: true
+          changed_when: false
+          async: 1
+          poll: 0
+        - name: Wait for server to come back after reboot
+          wait_for_connection:
+            timeout: 600
+            delay: 20
+          register: reboot_result
+        - name: reboot time
+          debug:
+            msg: "The system rebooted in {{ reboot_result.elapsed }} seconds."
+      tags: ['never', 'reboot']

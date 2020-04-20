@@ -1,0 +1,8 @@
+---
+- hosts: all
+  tasks:
+    - shell: "df -hP |grep -v ^Filesystem | awk '$5 >=20 {print}'" 
+      register: output
+
+    - debug:
+        msg: "{{ output.stdout_lines }}"
