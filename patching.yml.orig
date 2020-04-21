@@ -2,7 +2,7 @@
 ## This scripted prepared by Manish Gupta. All rights reversed. ##
 ## Example to Run: ansible-playbook  patching.yml -t all,reboot ##
 ## -t:tags: Use tags only for reboot, if required ##
-- hosts: "{{ hostname }}"
+- hosts: all
   become: true
 
   vars:
