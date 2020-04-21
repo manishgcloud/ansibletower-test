@@ -27,7 +27,7 @@
         exclude: "{{ exclude_pkg }}"
     
     - name: List installed and updated packages
-      shell: rpm -qa --last | grep "$(date +%a\ %d\ %b\ %Y)" |cut -f 1 -d " "
+      shell: rpm -qa --last | grep "$(date +%a\ %d\ %b\ %Y)" |wc -l
       args:
         warn: false
       changed_when: false
